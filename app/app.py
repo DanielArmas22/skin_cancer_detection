@@ -10,7 +10,7 @@ from PIL import Image
 import tensorflow as tf
 from tensorflow import keras
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, precision_score, recall_score, f1_score
-from model_utils import load_models, predict_image, get_model_info
+from model_utils import load_models, predict_image, predict_image_with_debug, predict_image_with_custom_threshold, get_model_info
 from preprocessing import preprocess_image
 import time
 from tensorflow.keras.applications import ResNet50
@@ -61,6 +61,13 @@ if not model_names:
 st.sidebar.header("⚙️ Configuración")
 st.sidebar.markdown("Selecciona los parámetros para el análisis")
 
+# Opción de debug
+debug_mode = st.sidebar.checkbox(
+    "🐛 Modo Debug",
+    value=False,
+    help="Activa información detallada de debug para diagnosticar problemas"
+)
+
 # Selección de modelo
 selected_model = st.sidebar.selectbox(
     "🤖 Selecciona el modelo a utilizar",
@@ -86,6 +93,19 @@ confidence_threshold = st.sidebar.slider(
     step=0.01,
     help="Valores más altos requieren mayor confianza para el diagnóstico"
 )
+
+# Umbral de decisión para maligno/benigno
+decision_threshold = st.sidebar.slider(
+    "⚖️ Umbral de decisión Maligno/Benigno",
+    min_value=0.1,
+    max_value=0.9,
+    value=0.5,
+    step=0.05,
+    help="Valores más bajos hacen el modelo más sensible a casos malignos"
+)
+
+st.sidebar.markdown("---")
+st.sidebar.markdown("💡 **Nota**: Un umbral de decisión más bajo (ej: 0.3) hará que el modelo sea más sensible a detectar casos malignos, pero también aumentará los falsos positivos.")
 
 # Funciones para análisis estadístico avanzado
 def matthews_correlation_coefficient(cm):
@@ -1015,7 +1035,30 @@ if uploaded_file is not None:
     
     with st.spinner("Analizando imagen..."):
         model = models[selected_model]
-        diagnosis, confidence_percent, raw_confidence = predict_image(model, processed_image)
+        
+        if debug_mode:
+            # Usar función de debug
+            diagnosis, confidence_percent, raw_confidence = predict_image_with_debug(model, processed_image)
+            
+            # Mostrar información de debug
+            st.info("🐛 **Información de Debug:**")
+            st.code(f"""
+Imagen procesada:
+- Shape: {processed_image.shape}
+- Rango: [{processed_image.min():.3f}, {processed_image.max():.3f}]
+- Media: {processed_image.mean():.3f}
+- Desv. estándar: {processed_image.std():.3f}
+
+Modelo:
+- Input shape: {model.input_shape}
+- Output shape: {model.output_shape}
+- Umbral de decisión: {decision_threshold}
+            """)
+        else:
+            # Usar función con umbral personalizado
+            diagnosis, confidence_percent, raw_confidence = predict_image_with_custom_threshold(
+                model, processed_image, threshold=decision_threshold
+            )
     
     # Mostrar resultados con mejor diseño
     col1, col2, col3 = st.columns(3)
