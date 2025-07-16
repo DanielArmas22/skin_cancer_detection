@@ -9,7 +9,7 @@ def load_models():
     models = {}
     
     # Cargar modelos entrenados desde models
-    models_dir = Path("models")
+    models_dir = Path("./models")
     if models_dir.exists():
         trained_models = list(models_dir.glob("*.h5"))
         if trained_models:

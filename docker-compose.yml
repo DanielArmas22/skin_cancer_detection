@@ -1,5 +1,5 @@
 services:
-  app:
+  skin-cancer-app:
     build:
       context: .
       dockerfile: Dockerfile
@@ -7,13 +7,16 @@ services:
       - "8501:8501"
     volumes:
       - ./app:/app/app
+      - ./data:/app/data
     environment:
       - PYTHONPATH=/app
       - TF_CPP_MIN_LOG_LEVEL=2
+      - TF_ENABLE_ONEDNN_OPTS=0
     deploy:
       resources:
         limits:
-          cpus: '4'
+          cpus: "4"
           memory: 8G
         reservations:
           memory: 4G
+    restart: unless-stopped
