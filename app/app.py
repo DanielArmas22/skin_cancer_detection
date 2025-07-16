@@ -21,6 +21,8 @@ import base64
 from fpdf import FPDF
 import io
 from scipy import stats
+# Importación para multilenguaje
+from translations import get_available_languages, load_translations
 
 # Configuración de la página
 st.set_page_config(
@@ -29,12 +31,9 @@ st.set_page_config(
     layout="wide"
 )
 
-# Título de la aplicación
-st.title("🎯 Sistema Inteligente de Diagnóstico de Cáncer de Piel")
-st.markdown("""
-Este sistema utiliza **modelos entrenados específicamente para cáncer de piel** con el dataset ISIC 2019 
-para analizar imágenes dermatológicas y proporcionar un diagnóstico preliminar de lesiones cutáneas.
-""")
+# Configuración inicial para traducciones
+# Esto se actualizará después de la selección del idioma en el sidebar
+t = load_translations('es')  # Español por defecto
 
 # Cargar modelos entrenados
 @st.cache_resource
@@ -42,70 +41,94 @@ def load_models_cached():
     try:
         models = load_models()
         if not models:
-            st.error("❌ No se pudieron cargar los modelos entrenados.")
-            st.error("📝 Asegúrate de que los archivos .h5 estén en la carpeta app/models/")
+            st.error("❌ " + t.get('models_load_error', "No se pudieron cargar los modelos entrenados."))
+            st.error("📝 " + t.get('models_folder_check', "Asegúrate de que los archivos .h5 estén en la carpeta app/models/"))
             return {}
         return models
     except Exception as e:
-        st.error(f"❌ Error al cargar los modelos: {str(e)}")
+        st.error(f"❌ {t.get('model_load_exception', 'Error al cargar los modelos')}: {str(e)}")
         return {}
 
 models = load_models_cached()
 model_names = list(models.keys())
 
 if not model_names:
-    st.error("❌ No hay modelos disponibles. Verifica que los modelos entrenados estén en app/models/")
+    st.error("❌ " + t.get('no_models_available', "No hay modelos disponibles. Verifica que los modelos entrenados estén en app/models/"))
     st.stop()
 
+# Configuración de idioma
+available_languages = get_available_languages()
+
+# Inicializar el estado de sesión para recordar el idioma seleccionado
+if 'language' not in st.session_state:
+    st.session_state['language'] = list(available_languages.keys())[0]  # Español por defecto
+
+# Selector de idioma
+lang = st.sidebar.selectbox(
+    "🌐 Idioma/Language",
+    options=list(available_languages.keys()),
+    index=list(available_languages.keys()).index(st.session_state['language']),
+    key='language_selector'
+)
+# Actualizar el estado de sesión
+st.session_state['language'] = lang
+
+current_lang_code = available_languages[lang]
+t = load_translations(current_lang_code)
+
 # Sidebar para configuración
-st.sidebar.header("⚙️ Configuración")
-st.sidebar.markdown("Selecciona los parámetros para el análisis")
+st.sidebar.header(t['settings'])
+st.sidebar.markdown(t['settings_description'])
 
 # Opción de debug
 debug_mode = st.sidebar.checkbox(
-    "🐛 Modo Debug",
+    t['debug_mode'],
     value=False,
-    help="Activa información detallada de debug para diagnosticar problemas"
+    help=t['debug_help']
 )
+
+# Título de la aplicación (se coloca después de la configuración del idioma)
+st.title(f"🎯 {t['app_title']}")
+st.markdown(t['app_description'])
 
 # Selección de modelo
 selected_model = st.sidebar.selectbox(
-    "🤖 Selecciona el modelo a utilizar",
+    t['select_model'],
     model_names,
     index=0,
-    help="Cada modelo tiene diferentes características de rendimiento y precisión"
+    help=t['select_model_help']
 )
 
 # Mostrar información del modelo seleccionado
 if selected_model in models:
     model_info = get_model_info(models[selected_model])
     st.sidebar.markdown("---")
-    st.sidebar.markdown("📊 **Información del Modelo:**")
-    st.sidebar.markdown(f"**Parámetros:** {model_info['parameters']:,}")
-    st.sidebar.markdown(f"**Capas:** {model_info['layers']}")
+    st.sidebar.markdown(t['model_info'])
+    st.sidebar.markdown(f"{t['parameters']} {model_info['parameters']:,}")
+    st.sidebar.markdown(f"{t['layers']} {model_info['layers']}")
 
 # Umbral de confianza
 confidence_threshold = st.sidebar.slider(
-    "🎯 Umbral de confianza para diagnóstico",
+    t['confidence_threshold'],
     min_value=0.5,
     max_value=0.99,
     value=0.75,
     step=0.01,
-    help="Valores más altos requieren mayor confianza para el diagnóstico"
+    help=t['confidence_help']
 )
 
 # Umbral de decisión para maligno/benigno
 decision_threshold = st.sidebar.slider(
-    "⚖️ Umbral de decisión Maligno/Benigno",
+    t['decision_threshold'],
     min_value=0.1,
     max_value=0.9,
     value=0.5,
     step=0.05,
-    help="Valores más bajos hacen el modelo más sensible a casos malignos"
+    help=t['decision_help']
 )
 
 st.sidebar.markdown("---")
-st.sidebar.markdown("💡 **Nota**: Un umbral de decisión más bajo (ej: 0.3) hará que el modelo sea más sensible a detectar casos malignos, pero también aumentará los falsos positivos.")
+st.sidebar.markdown(t['threshold_note'])
 
 # Funciones para análisis estadístico avanzado
 def matthews_correlation_coefficient(cm):
@@ -288,11 +311,11 @@ def create_advanced_metrics_dashboard(metrics_data, model_name):
         return None
 
 # Carga de imagen
-st.header("📸 Carga de Imagen")
+st.header(t['image_upload'])
 uploaded_file = st.file_uploader(
-    "Sube una imagen de la lesión cutánea (JPG, JPEG, PNG)",
+    t['upload_prompt'],
     type=["jpg", "jpeg", "png"],
-    help="La imagen debe ser clara y mostrar bien la lesión"
+    help=t['upload_help']
 )
 
 def generate_activation_map(model, image):
@@ -550,8 +573,10 @@ def save_plot_to_image(fig, filename):
         st.error(f"Error al guardar gráfico: {str(e)}")
         return False
 
-def generate_pdf_report(image, diagnosis, confidence_percent, raw_confidence, model_name, model_info, comparison_results=None, confidence_threshold=0.75, metrics_data=None, plots_data=None):
+def generate_pdf_report(image, diagnosis, confidence_percent, raw_confidence, model_name, model_info, comparison_results=None, confidence_threshold=0.75, metrics_data=None, plots_data=None, translations=None):
     """Genera un reporte PDF completo y visualmente atractivo para el diagnóstico de cáncer de piel"""
+    # Si no se proporciona un diccionario de traducciones, usamos textos en español por defecto
+    t = translations or {}
     try:
         # Crear PDF con orientación horizontal para mejor layout
         pdf = FPDF(orientation='L', format='A4')
@@ -999,14 +1024,15 @@ def generate_pdf_report(image, diagnosis, confidence_percent, raw_confidence, mo
             pdf_bytes = f.read()
         
         b64 = base64.b64encode(pdf_bytes).decode()
-        href = f'<a href="data:application/octet-stream;base64,{b64}" download="{pdf_path}">📄 Descargar Reporte PDF</a>'
+        download_text = t.get('download_pdf', 'Descargar Reporte PDF')
+        href = f'<a href="data:application/octet-stream;base64,{b64}" download="{pdf_path}">📄 {download_text}</a>'
         st.markdown(href, unsafe_allow_html=True)
         
         # Limpiar archivos temporales
         os.remove(img_path)
         os.remove(pdf_path)
         
-        st.success("✅ Reporte PDF generado exitosamente")
+        st.success("✅ " + t.get('pdf_success', 'Reporte PDF generado exitosamente'))
         
     except Exception as e:
         st.error(f"❌ Error al generar el reporte PDF: {str(e)}")
@@ -1018,7 +1044,7 @@ def generate_pdf_report(image, diagnosis, confidence_percent, raw_confidence, mo
 if uploaded_file is not None:
     # Mostrar imagen original
     image = Image.open(uploaded_file)
-    st.image(image, caption="Imagen original", use_column_width=True)
+    st.image(image, caption=t.get('original_image', "Imagen original"), use_column_width=True)
     
     # Preprocesamiento
     processed_image = preprocess_image(np.array(image))
@@ -1026,14 +1052,14 @@ if uploaded_file is not None:
     # Mostrar comparación de imágenes
     col1, col2 = st.columns(2)
     with col1:
-        st.image(image, caption="Imagen Original", use_column_width=True)
+        st.image(image, caption=t.get('original_image', "Imagen Original"), use_column_width=True)
     with col2:
-        st.image(processed_image, caption="Imagen Procesada (300x300)", use_column_width=True)
+        st.image(processed_image, caption=t.get('processed_image', "Imagen Procesada (300x300)"), use_column_width=True)
     
     # Realizar predicción con el modelo seleccionado
-    st.header("🔍 Resultados del Diagnóstico")
+    st.header("🔍 " + t.get('diagnosis_results', "Resultados del Diagnóstico"))
     
-    with st.spinner("Analizando imagen..."):
+    with st.spinner(t.get('processing_image', "Analizando imagen...")):
         model = models[selected_model]
         
         if debug_mode:
@@ -1041,18 +1067,18 @@ if uploaded_file is not None:
             diagnosis, confidence_percent, raw_confidence = predict_image_with_debug(model, processed_image)
             
             # Mostrar información de debug
-            st.info("🐛 **Información de Debug:**")
+            st.info("🐛 " + t.get('debug_info', "**Información de Debug:**"))
             st.code(f"""
-Imagen procesada:
+{t.get('processed_image_title', "Imagen procesada")}:
 - Shape: {processed_image.shape}
-- Rango: [{processed_image.min():.3f}, {processed_image.max():.3f}]
-- Media: {processed_image.mean():.3f}
-- Desv. estándar: {processed_image.std():.3f}
+- {t.get('range', "Rango")}: [{processed_image.min():.3f}, {processed_image.max():.3f}]
+- {t.get('mean', "Media")}: {processed_image.mean():.3f}
+- {t.get('std_dev', "Desv. estándar")}: {processed_image.std():.3f}
 
-Modelo:
+{t.get('model_title', "Modelo")}:
 - Input shape: {model.input_shape}
 - Output shape: {model.output_shape}
-- Umbral de decisión: {decision_threshold}
+- {t.get('decision_threshold_title', "Umbral de decisión")}: {decision_threshold}
             """)
         else:
             # Usar función con umbral personalizado
@@ -1064,32 +1090,33 @@ Modelo:
     col1, col2, col3 = st.columns(3)
     
     with col1:
+        diagnosis_text = t.get('benign', 'Benigno') if diagnosis == "Benigno" else t.get('malignant', 'Maligno')
         if diagnosis == "Benigno":
-            st.success(f"✅ **Diagnóstico: {diagnosis}**")
+            st.success(f"✅ **{t.get('prediction', 'Diagnóstico')}: {diagnosis_text}**")
         else:
-            st.error(f"⚠️ **Diagnóstico: {diagnosis}**")
+            st.error(f"⚠️ **{t.get('prediction', 'Diagnóstico')}: {diagnosis_text}**")
     
     with col2:
-        st.metric("Confianza", f"{confidence_percent:.1f}%")
+        st.metric(t.get('confidence', 'Confianza'), f"{confidence_percent:.1f}%")
     
     with col3:
         st.metric("Valor Raw", f"{raw_confidence:.3f}")
     
     # Interpretación de resultados
     st.markdown("---")
-    st.subheader("📋 Interpretación de Resultados")
+    st.subheader("📋 " + t.get('results_interpretation', "Interpretación de Resultados"))
     
     if confidence_percent < (confidence_threshold * 100):
-        st.warning("⚠️ **Confianza baja**: La confianza en el diagnóstico es menor al umbral establecido. Se recomienda consultar a un especialista.")
+        st.warning(t.get('low_confidence_warning', "⚠️ **Confianza baja**: La confianza en el diagnóstico es menor al umbral establecido. Se recomienda consultar a un especialista."))
     else:
         if diagnosis == "Benigno":
-            st.success("✅ **Resultado favorable**: La lesión parece ser benigna según el análisis del modelo entrenado. Sin embargo, se recomienda seguimiento con un dermatólogo para confirmación.")
+            st.success(t.get('favorable_result', "✅ **Resultado favorable**: La lesión parece ser benigna según el análisis del modelo entrenado. Sin embargo, se recomienda seguimiento con un dermatólogo para confirmación."))
         else:
-            st.error("🚨 **Atención requerida**: El sistema ha detectado características que sugieren una lesión maligna. Se recomienda consultar **urgentemente** con un especialista.")
+            st.error(t.get('attention_required', "🚨 **Atención requerida**: El sistema ha detectado características que sugieren una lesión maligna. Se recomienda consultar **urgentemente** con un especialista."))
     
     # COMPARACIÓN REAL DE TODOS LOS MODELOS
     st.markdown("---")
-    st.subheader("📊 Comparación de Todos los Modelos")
+    st.subheader("📊 " + t.get('model_comparison', "Comparación de Todos los Modelos"))
     st.markdown("Resultados de análisis de la misma imagen con diferentes modelos:")
     
     # Realizar predicciones con todos los modelos
@@ -1155,7 +1182,7 @@ Modelo:
         
         # Análisis de consistencia
         st.markdown("---")
-        st.subheader("🔍 Análisis de Consistencia")
+        st.subheader("🔍 " + t.get('consistency_analysis', "Análisis de Consistencia"))
         
         diagnoses = df_comparison['Diagnostico'].tolist()
         if len(set(diagnoses)) == 1:
@@ -1167,7 +1194,7 @@ Modelo:
     
     # NUEVA SECCIÓN: MATRIZ DE CONFUSIÓN Y MÉTRICAS
     st.markdown("---")
-    st.subheader("📊 Matriz de Confusión y Métricas de Rendimiento")
+    st.subheader("📊 " + t.get('confusion_matrix', "Matriz de Confusión y Métricas"))
     st.markdown("Análisis detallado del rendimiento del modelo seleccionado:")
     
     # Usar datos reales del entrenamiento según el modelo seleccionado con métricas avanzadas
@@ -1677,6 +1704,7 @@ Modelo:
                     model_name=selected_model,
                     model_info=get_model_info(models[selected_model]),
                     comparison_results=comparison_results,
+                    translations=t,
                     confidence_threshold=confidence_threshold,
                     metrics_data=metrics_data,
                     plots_data=plots_data
