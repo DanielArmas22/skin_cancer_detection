@@ -9,7 +9,7 @@ def load_models():
     models = {}
     
     # Cargar modelos entrenados desde models
-    models_dir = Path("./models")
+    models_dir = Path("models")
     if models_dir.exists():
         trained_models = list(models_dir.glob("*.h5"))
         if trained_models:
@@ -31,7 +31,7 @@ def load_models():
     
     return models
 
-def predict_image(model, image):
+def predict_image(model, image, threshold=0.5):
     """Realiza una predicción con el modelo entrenado"""
     # Normalizar la imagen (0-1)
     image = image / 255.0
@@ -40,8 +40,8 @@ def predict_image(model, image):
     prediction = model.predict(np.expand_dims(image, axis=0), verbose=0)
     confidence = float(prediction[0][0])
     
-    # Interpretar resultado
-    if confidence > 0.5:
+    # Interpretar resultado usando el threshold proporcionado
+    if confidence > threshold:
         diagnosis = "Maligno"
         confidence_percent = confidence * 100
     else:
