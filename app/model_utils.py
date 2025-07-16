@@ -8,8 +8,8 @@ def load_models():
     """Carga los modelos entrenados para cáncer de piel"""
     models = {}
     
-    # Cargar modelos entrenados desde app/models
-    models_dir = Path("app/models")
+    # Cargar modelos entrenados desde models
+    models_dir = Path("models")
     if models_dir.exists():
         trained_models = list(models_dir.glob("*.h5"))
         if trained_models:
@@ -23,10 +23,10 @@ def load_models():
                 except Exception as e:
                     print(f"❌ Error cargando {model_path}: {e}")
         else:
-            print("❌ No se encontraron modelos entrenados en app/models/")
-            print("📝 Asegúrate de que los archivos .h5 estén en la carpeta app/models/")
+            print("❌ No se encontraron modelos entrenados en models/")
+            print("📝 Asegúrate de que los archivos .h5 estén en la carpeta models/")
     else:
-        print("❌ No se encontró la carpeta app/models/")
+        print("❌ No se encontró la carpeta models/")
         print("📝 Asegúrate de que los modelos entrenados estén en la ubicación correcta")
     
     return models

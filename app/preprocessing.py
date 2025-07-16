@@ -1,29 +1,50 @@
 import cv2
 import numpy as np
+from PIL import Image
+import tensorflow as tf
 
 def preprocess_image(image, target_size=(300, 300)):
-    """Preprocesa la imagen para el modelo"""
-    # Convertir a RGB si es en escala de grises
-    if len(image.shape) == 2:
-        image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
-    elif image.shape[2] == 4:
-        image = cv2.cvtColor(image, cv2.COLOR_RGBA2RGB)
+    """
+    Preprocesa una imagen para la predicción
     
-    # Redimensionar manteniendo relación de aspecto
-    h, w = image.shape[:2]
-    if h != target_size[0] or w != target_size[1]:
-        interpolation = cv2.INTER_AREA if h > target_size[0] or w > target_size[1] else cv2.INTER_CUBIC
-        image = cv2.resize(image, target_size, interpolation=interpolation)
+    Args:
+        image: PIL Image o numpy array
+        target_size: Tamaño objetivo (height, width)
     
-    # Mejorar contraste (CLAHE)
-    lab = cv2.cvtColor(image, cv2.COLOR_RGB2LAB)
-    l, a, b = cv2.split(lab)
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
-    l = clahe.apply(l)
-    lab = cv2.merge((l,a,b))
-    image = cv2.cvtColor(lab, cv2.COLOR_LAB2RGB)
+    Returns:
+        numpy array normalizado
+    """
+    # Convertir PIL Image a numpy array si es necesario
+    if isinstance(image, Image.Image):
+        image = np.array(image)
     
-    # Normalización
+    # Convertir a RGB si es necesario
+    if len(image.shape) == 3 and image.shape[2] == 3:
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    
+    # Redimensionar
+    image = cv2.resize(image, target_size)
+    
+    # Normalizar a [0, 1]
     image = image.astype(np.float32) / 255.0
     
     return image
+
+def prepare_batch_images(images, target_size=(300, 300)):
+    """
+    Preprocesa un lote de imágenes
+    
+    Args:
+        images: Lista de imágenes PIL o numpy arrays
+        target_size: Tamaño objetivo
+    
+    Returns:
+        numpy array con el lote procesado
+    """
+    processed_images = []
+    
+    for image in images:
+        processed_image = preprocess_image(image, target_size)
+        processed_images.append(processed_image)
+    
+    return np.array(processed_images)
