@@ -311,7 +311,7 @@ def generate_pdf_report(image, diagnosis, confidence_percent, raw_confidence, mo
             
             # Métricas avanzadas (traducido)
             pdf.set_font("Arial", 'B', 12)
-            advanced_metrics_title = t.get('advanced_metrics', "METRICAS DE RENDIMIENTO AVANZADAS")
+            advanced_metrics_title = t.get('advanced_metrics', "METRICAS DE RENDIMIENTO")
             pdf.cell(0, 8, txt=clean_text_for_pdf(advanced_metrics_title), ln=1)
             pdf.set_font("Arial", size=10)
             
@@ -329,8 +329,10 @@ def generate_pdf_report(image, diagnosis, confidence_percent, raw_confidence, mo
                 # Añadir el gráfico de matriz de confusión al PDF
                 pdf.ln(3)
                 pdf.set_font("Arial", 'B', 11)
-                pdf.cell(0, 8, txt=clean_text_for_pdf(t.get('confusion_matrix_visual', "Visualización de Matriz de Confusión")), ln=1, align='C')
-                pdf.image(cm_img_path, x=70, w=150, h=100)
+                conf_matrix_title = t.get('confusion_matrix_visual', "Visualización de Matriz de Confusión")
+                pdf.cell(0, 8, txt=clean_text_for_pdf(conf_matrix_title), ln=1, align='C')
+                # Aseguramos que la posición del gráfico esté centrada y alineada con su título
+                pdf.image(cm_img_path, x=(pdf.w - 150)/2, w=150, h=100)
                 pdf.ln(5)
             
             # Añadir nueva página para el dashboard de métricas
@@ -343,10 +345,19 @@ def generate_pdf_report(image, diagnosis, confidence_percent, raw_confidence, mo
                 save_plot_to_image(metrics_fig, metrics_img_path)
                 plt.close(metrics_fig)  # Cerrar figura para liberar memoria
                 
+                # Título y dashboard en la misma página, alineados correctamente
                 pdf.set_font("Arial", 'B', 12)
-                pdf.cell(0, 8, txt=clean_text_for_pdf(t.get('metrics_dashboard_title', "DASHBOARD DE MÉTRICAS DE RENDIMIENTO")), ln=1, align='C')
-                pdf.image(metrics_img_path, x=15, w=260, h=170)
+                metrics_dashboard_title = t.get('metrics_dashboard_title', "DASHBOARD DE MÉTRICAS DE RENDIMIENTO")
+                pdf.cell(0, 8, txt=clean_text_for_pdf(metrics_dashboard_title), ln=1, align='C')
+                # El gráfico se coloca inmediatamente después del título
+                pdf.image(metrics_img_path, x=(pdf.w - 260)/2, w=260, h=150)
                 pdf.ln(5)
+                
+                # Añadir explicación de las métricas mostradas en el dashboard
+                pdf.set_font("Arial", size=9)
+                dashboard_explanation = t.get('dashboard_explanation', 
+                    "El dashboard de métricas muestra visualmente el rendimiento del modelo mediante diferentes visualizaciones, incluyendo accuracy, precision, sensitivity y specificity.")
+                pdf.multi_cell(0, 8, txt=clean_text_for_pdf(dashboard_explanation), align='L')
             
             # Añadir nueva página para el dashboard avanzado
             pdf.add_page()
@@ -358,69 +369,12 @@ def generate_pdf_report(image, diagnosis, confidence_percent, raw_confidence, mo
                 save_plot_to_image(advanced_fig, advanced_img_path)
                 plt.close(advanced_fig)  # Cerrar figura para liberar memoria
                 
+                # Título y dashboard en la misma página, alineados correctamente
                 pdf.set_font("Arial", 'B', 12)
-                pdf.cell(0, 8, txt=clean_text_for_pdf(t.get('advanced_dashboard_title', "ANÁLISIS ESTADÍSTICO AVANZADO")), ln=1, align='C')
-                pdf.image(advanced_img_path, x=15, w=260, h=170)
-                pdf.ln(5)
-            
-            # Etiquetas traducidas para las métricas
-            accuracy_label = t.get('accuracy', "Accuracy")
-            sensitivity_label = t.get('sensitivity', "Sensibilidad")
-            specificity_label = t.get('specificity', "Especificidad")
-            precision_label = t.get('precision', "Precision")
-            f1_score_label = t.get('f1_score', "F1-Score")
-            mcc_label = t.get('mcc', "MCC")
-            
-            # Crear gráficos de visualización
-            if plots_data is None:
-                plots_data = {}
-            
-            # Generar gráfico de matriz de confusión
-            cm_fig = plot_confusion_matrix(metrics_data['confusion_matrix'], model_name)
-            cm_img_path = "temp_cm_plot.png"
-            if cm_fig:
-                save_plot_to_image(cm_fig, cm_img_path)
-                plt.close(cm_fig)  # Cerrar figura para liberar memoria
-                
-            # Añadir el gráfico de matriz de confusión al PDF - optimizado para PDF
-            pdf.ln(3)
-            pdf.set_font("Arial", 'B', 11)
-            pdf.cell(0, 8, txt=clean_text_for_pdf(t.get('confusion_matrix_visual', "Visualización de Matriz de Confusión")), ln=1, align='C')
-            pdf.image(cm_img_path, x=70, w=150, h=100)
-            pdf.ln(5)
-                
-            # Generar dashboard de métricas - optimizado para PDF
-            metrics_fig = create_metrics_dashboard(metrics_data, model_name)
-            metrics_img_path = "temp_metrics_plot.png"
-            if metrics_fig:
-                save_plot_to_image(metrics_fig, metrics_img_path)
-                plt.close(metrics_fig)  # Cerrar figura para liberar memoria
-                
-                # Añadir nueva página para el dashboard de métricas
-                pdf.add_page()
-                pdf.set_font("Arial", 'B', 12)
-                pdf.cell(0, 8, txt=clean_text_for_pdf(t.get('metrics_dashboard_title', "DASHBOARD DE MÉTRICAS DE RENDIMIENTO")), ln=1, align='C')
-                # Optimizar tamaño para mejor visualización en PDF
-                pdf.image(metrics_img_path, x=15, w=260, h=170)
-                pdf.ln(5)
-                
-                # Añadir explicación de las métricas mostradas en el dashboard
-                pdf.set_font("Arial", size=9)
-                dashboard_explanation = t.get('dashboard_explanation', 
-                    "El dashboard de métricas muestra visualmente el rendimiento del modelo mediante diferentes visualizaciones, incluyendo accuracy, precision, sensitivity y specificity.")
-                pdf.multi_cell(0, 8, txt=clean_text_for_pdf(dashboard_explanation), align='L')            # Generar dashboard avanzado de métricas - optimizado para PDF
-            advanced_fig = create_advanced_metrics_dashboard(metrics_data, model_name)
-            advanced_img_path = "temp_advanced_plot.png"
-            if advanced_fig:
-                save_plot_to_image(advanced_fig, advanced_img_path)
-                plt.close(advanced_fig)  # Cerrar figura para liberar memoria
-                
-                # Añadir nueva página para el dashboard avanzado
-                pdf.add_page()
-                pdf.set_font("Arial", 'B', 12)
-                pdf.cell(0, 8, txt=clean_text_for_pdf(t.get('advanced_dashboard_title', "ANÁLISIS ESTADÍSTICO AVANZADO")), ln=1, align='C')
-                # Optimizar tamaño para mejor visualización en PDF
-                pdf.image(advanced_img_path, x=15, w=260, h=170)
+                advanced_dashboard_title = t.get('advanced_dashboard_title', "ANÁLISIS ESTADÍSTICO AVANZADO")
+                pdf.cell(0, 8, txt=clean_text_for_pdf(advanced_dashboard_title), ln=1, align='C')
+                # El gráfico se coloca inmediatamente después del título
+                pdf.image(advanced_img_path, x=(pdf.w - 260)/2, w=260, h=150)
                 pdf.ln(5)
                 
                 # Añadir explicación del dashboard avanzado
@@ -429,53 +383,82 @@ def generate_pdf_report(image, diagnosis, confidence_percent, raw_confidence, mo
                     "El dashboard avanzado muestra métricas estadísticas detalladas, incluyendo el Coeficiente de Matthews (MCC), que es especialmente útil para evaluar modelos con clases desbalanceadas.")
                 pdf.multi_cell(0, 8, txt=clean_text_for_pdf(advanced_explanation), align='L')
                 pdf.ln(2)
+                
+            # Etiquetas traducidas para las métricas
+            accuracy_label = t.get('accuracy', "Accuracy")
+            sensitivity_label = t.get('sensitivity', "Sensibilidad")
+            specificity_label = t.get('specificity', "Especificidad")
+            precision_label = t.get('precision', "Precision")
+            f1_score_label = t.get('f1_score', "F1-Score")
+            mcc_label = t.get('mcc', "MCC")
+            mcnemar_label = t.get('mcnemar', "McNemar")
             
             # Mostrar métricas con sus etiquetas traducidas - con formato mejorado para PDF
-            pdf.set_font("Arial", 'B', 10)
+            pdf.add_page()
+            pdf.set_font("Arial", 'B', 11)
             metrics_title = t.get('metrics_summary', "RESUMEN DE MÉTRICAS PRINCIPALES")
-            pdf.cell(0, 8, txt=clean_text_for_pdf(metrics_title), ln=1)
+            pdf.cell(0, 8, txt=clean_text_for_pdf(metrics_title), ln=1, align='C')
+            pdf.ln(3)
             pdf.set_font("Arial", size=10)
             
-            # Crear una tabla para las métricas
+            # Crear una tabla para las métricas con posición centrada
             col_width = 90
+            table_width = 3 * col_width
+            table_x = (pdf.w - table_width) / 2
             pdf.set_fill_color(240, 240, 240)
             
             # Headers
+            pdf.set_x(table_x)
             pdf.cell(col_width, 8, txt=clean_text_for_pdf(t.get('metric_name', "Métrica")), border=1, fill=True)
             pdf.cell(col_width, 8, txt=clean_text_for_pdf(t.get('metric_value', "Valor")), border=1, fill=True)
-            pdf.cell(0, 8, txt=clean_text_for_pdf(t.get('metric_percentage', "Porcentaje")), border=1, fill=True)
+            pdf.cell(col_width, 8, txt=clean_text_for_pdf(t.get('metric_percentage', "Porcentaje")), border=1, fill=True)
             pdf.ln()
             
             # Filas de métricas
+            pdf.set_x(table_x)
             pdf.cell(col_width, 8, txt=clean_text_for_pdf(accuracy_label), border=1)
             pdf.cell(col_width, 8, txt=clean_text_for_pdf(f"{metrics_data['accuracy']:.3f}"), border=1)
-            pdf.cell(0, 8, txt=clean_text_for_pdf(f"{metrics_data['accuracy']*100:.1f}%"), border=1)
+            pdf.cell(col_width, 8, txt=clean_text_for_pdf(f"{metrics_data['accuracy']*100:.1f}%"), border=1)
             pdf.ln()
             
+            pdf.set_x(table_x)
             pdf.cell(col_width, 8, txt=clean_text_for_pdf(sensitivity_label), border=1)
             pdf.cell(col_width, 8, txt=clean_text_for_pdf(f"{metrics_data['sensitivity']:.3f}"), border=1)
-            pdf.cell(0, 8, txt=clean_text_for_pdf(f"{metrics_data['sensitivity']*100:.1f}%"), border=1)
+            pdf.cell(col_width, 8, txt=clean_text_for_pdf(f"{metrics_data['sensitivity']*100:.1f}%"), border=1)
             pdf.ln()
             
+            pdf.set_x(table_x)
             pdf.cell(col_width, 8, txt=clean_text_for_pdf(specificity_label), border=1)
             pdf.cell(col_width, 8, txt=clean_text_for_pdf(f"{metrics_data['specificity']:.3f}"), border=1)
-            pdf.cell(0, 8, txt=clean_text_for_pdf(f"{metrics_data['specificity']*100:.1f}%"), border=1)
+            pdf.cell(col_width, 8, txt=clean_text_for_pdf(f"{metrics_data['specificity']*100:.1f}%"), border=1)
             pdf.ln()
             
+            pdf.set_x(table_x)
             pdf.cell(col_width, 8, txt=clean_text_for_pdf(precision_label), border=1)
             pdf.cell(col_width, 8, txt=clean_text_for_pdf(f"{metrics_data['precision']:.3f}"), border=1)
-            pdf.cell(0, 8, txt=clean_text_for_pdf(f"{metrics_data['precision']*100:.1f}%"), border=1)
+            pdf.cell(col_width, 8, txt=clean_text_for_pdf(f"{metrics_data['precision']*100:.1f}%"), border=1)
             pdf.ln()
             
+            pdf.set_x(table_x)
             pdf.cell(col_width, 8, txt=clean_text_for_pdf(f1_score_label), border=1)
             pdf.cell(col_width, 8, txt=clean_text_for_pdf(f"{metrics_data['f1_score']:.3f}"), border=1)
-            pdf.cell(0, 8, txt=clean_text_for_pdf(f"{metrics_data['f1_score']*100:.1f}%"), border=1)
+            pdf.cell(col_width, 8, txt=clean_text_for_pdf(f"{metrics_data['f1_score']*100:.1f}%"), border=1)
             pdf.ln()
             
+            # Añadimos coeficiente de Matthews (MCC)
+            pdf.set_x(table_x)
             pdf.cell(col_width, 8, txt=clean_text_for_pdf(mcc_label), border=1)
             pdf.cell(col_width, 8, txt=clean_text_for_pdf(f"{metrics_data['mcc']:.3f}"), border=1)
-            pdf.cell(0, 8, txt=clean_text_for_pdf("N/A"), border=1)
+            pdf.cell(col_width, 8, txt=clean_text_for_pdf("N/A"), border=1)
             pdf.ln()
+            
+            # Añadimos estadísticas de McNemar si están disponibles
+            if 'mcnemar_statistic' in metrics_data and 'mcnemar_pvalue' in metrics_data:
+                pdf.set_x(table_x)
+                pdf.cell(col_width, 8, txt=clean_text_for_pdf(mcnemar_label), border=1)
+                pdf.cell(col_width, 8, txt=clean_text_for_pdf(f"{metrics_data['mcnemar_statistic']:.3f}"), border=1)
+                pdf.cell(col_width, 8, txt=clean_text_for_pdf(f"p={metrics_data['mcnemar_pvalue']:.3f}"), border=1)
+                pdf.ln()
             
             # Interpretación de métricas (traducido)
             pdf.ln(5)
@@ -488,10 +471,17 @@ def generate_pdf_report(image, diagnosis, confidence_percent, raw_confidence, mo
             accuracy_explanation = t.get('accuracy_explanation', "de las predicciones son correctas")
             sensitivity_explanation = t.get('sensitivity_explanation', "de los casos malignos son detectados")
             specificity_explanation = t.get('specificity_explanation', "de los casos benignos son correctamente identificados")
+            mcc_explanation = t.get('mcc_explanation', "de correlación entre predicciones y observaciones reales")
             
+            # Centrar las interpretaciones
+            pdf.set_x(table_x)
             pdf.cell(0, 6, txt=clean_text_for_pdf(f"• {accuracy_label}: {metrics_data['accuracy']*100:.1f}% {accuracy_explanation}"), ln=1)
+            pdf.set_x(table_x)
             pdf.cell(0, 6, txt=clean_text_for_pdf(f"• {sensitivity_label}: {metrics_data['sensitivity']*100:.1f}% {sensitivity_explanation}"), ln=1)
+            pdf.set_x(table_x)
             pdf.cell(0, 6, txt=clean_text_for_pdf(f"• {specificity_label}: {metrics_data['specificity']*100:.1f}% {specificity_explanation}"), ln=1)
+            pdf.set_x(table_x)
+            pdf.cell(0, 6, txt=clean_text_for_pdf(f"• {mcc_label}: {metrics_data['mcc']:.3f} {mcc_explanation}"), ln=1)
             pdf.ln(5)
             
             # Añadir mapas de activación si están disponibles en plots_data
@@ -512,8 +502,8 @@ def generate_pdf_report(image, diagnosis, confidence_percent, raw_confidence, mo
                 # Añadir los mapas de activación como imágenes
                 activation_img_path = plots_data['activation_maps']
                 if os.path.exists(activation_img_path):
-                    # Optimizar tamaño para mejor visualización en PDF
-                    pdf.image(activation_img_path, x=50, w=180, h=140)
+                    # Optimizar tamaño para mejor visualización en PDF y centrar la imagen
+                    pdf.image(activation_img_path, x=(pdf.w - 180)/2, w=180, h=140)
                     pdf.ln(5)
         
         # Comparación de modelos (si está disponible) - En la sección de análisis estadístico
@@ -523,8 +513,8 @@ def generate_pdf_report(image, diagnosis, confidence_percent, raw_confidence, mo
             
             # Título de la sección de análisis estadístico (traducido)
             pdf.set_font("Arial", 'B', 16)
-            statistical_analysis_title = t.get('statistical_analysis_title', "ANALISIS ESTADISTICO AVANZADO")
-            pdf.cell(0, 12, txt=clean_text_for_pdf(statistical_analysis_title.upper()), ln=1, align='C')
+            comparison_title = t.get('model_comparison_title', "COMPARACIÓN DE MODELOS")
+            pdf.cell(0, 12, txt=clean_text_for_pdf(comparison_title.upper()), ln=1, align='C')
             pdf.ln(5)
             
             # Generar DataFrame para la comparación
@@ -541,26 +531,32 @@ def generate_pdf_report(image, diagnosis, confidence_percent, raw_confidence, mo
                 save_plot_to_image(time_fig, time_img_path)
                 plt.close(conf_fig)
                 plt.close(time_fig)
-            else:
-                # Siempre añadir nueva página para la comparación de modelos
-                pdf.add_page()
-            
-            # Generar DataFrame para la comparación
-            import pandas as pd
-            df_comparison = pd.DataFrame(comparison_results)
-            
-            # Generar gráficos de comparación
-            conf_fig, time_fig = create_model_comparison_plots(df_comparison)
-            conf_img_path = "temp_comparison_conf.png"
-            time_img_path = "temp_comparison_time.png"
-            
-            if conf_fig and time_fig:
-                save_plot_to_image(conf_fig, conf_img_path)
-                save_plot_to_image(time_fig, time_img_path)
-                plt.close(conf_fig)
-                plt.close(time_fig)
                 
-                # Subtítulo para la comparación de modelos - traducido
+                # Mostrar gráficos de comparación - confianza
+                pdf.set_font("Arial", 'B', 12)
+                conf_comparison_title = t.get('confidence_comparison', "Comparación de Confianza entre Modelos")
+                pdf.cell(0, 8, txt=clean_text_for_pdf(conf_comparison_title), ln=1, align='C')
+                # Centrar la imagen
+                pdf.image(conf_img_path, x=(pdf.w - 240)/2, w=240, h=120)
+                pdf.ln(5)
+                
+                # Añadir nueva página para el gráfico de tiempo
+                pdf.add_page()
+                pdf.set_font("Arial", 'B', 12)
+                time_comparison_title = t.get('time_comparison', "Comparación de Tiempo de Ejecución")
+                pdf.cell(0, 8, txt=clean_text_for_pdf(time_comparison_title), ln=1, align='C')
+                # Centrar la imagen
+                pdf.image(time_img_path, x=(pdf.w - 240)/2, w=240, h=120)
+                pdf.ln(5)
+                
+                # Añadir explicación de la comparación
+                pdf.set_font("Arial", size=9)
+                comparison_explanation = t.get('comparison_explanation', 
+                    "La comparación de modelos muestra el rendimiento relativo de diferentes arquitecturas de CNN para la detección de cáncer de piel. Los gráficos comparan la precisión y el tiempo de ejecución de cada modelo.")
+                pdf.multi_cell(0, 8, txt=clean_text_for_pdf(comparison_explanation), align='L')
+                pdf.ln(2)
+            
+            # Subtítulo para la comparación de modelos - traducido
             pdf.set_font("Arial", 'B', 12)
             model_comparison_title = t.get('model_comparison', "COMPARACION DETALLADA DE MODELOS")
             pdf.cell(0, 10, txt=clean_text_for_pdf(model_comparison_title.upper()), ln=1, align='C')
@@ -670,41 +666,108 @@ def generate_pdf_report(image, diagnosis, confidence_percent, raw_confidence, mo
                 pdf.multi_cell(0, 8, txt=clean_text_for_pdf(time_explanation), align='C')
             
             # Generar gráfico MCC si hay al menos 2 modelos con métricas
-            if plots_data and 'mcc_comparison' in plots_data and len(plots_data['mcc_comparison']) >= 2:
-                mcc_fig = create_mcc_comparison_chart(plots_data['mcc_comparison'])
-                mcc_img_path = "temp_mcc_chart.png"
+            mcc_data = None
+            # Buscar datos MCC directamente en plots_data o dentro de comparison_plots
+            if plots_data:
+                if 'mcc_comparison' in plots_data:
+                    mcc_data = plots_data['mcc_comparison']
+                elif 'comparison_plots' in plots_data:
+                    # Buscar la clave que contiene "MCC" en comparison_plots
+                    for key, value in plots_data['comparison_plots'].items():
+                        if 'MCC' in key or 'mcc' in key.lower():
+                            mcc_data = value
+                            break
                 
-                if mcc_fig:
-                    save_plot_to_image(mcc_fig, mcc_img_path)
-                    plt.close(mcc_fig)
+                # Verificar que los datos sean adecuados para generar el gráfico
+                if mcc_data is not None:
+                    mcc_img_path = "temp_mcc_chart.png"
                     
-                    # Añadir nueva página para el gráfico MCC
-                    pdf.add_page()
-                    pdf.set_font("Arial", 'B', 11)
-                    pdf.cell(0, 8, txt=clean_text_for_pdf(t.get('mcc_comparison_chart', "COMPARACIÓN DE COEFICIENTE DE MATTHEWS (MCC)")), ln=1, align='C')
-                    pdf.image(mcc_img_path, x=30, w=220, h=150)
+                    # Si ya es una imagen, usarla directamente
+                    if isinstance(mcc_data, str) and os.path.exists(mcc_data):
+                        mcc_img_path = mcc_data
+                        has_mcc_image = True
+                    else:
+                        # Intentar generar el gráfico
+                        try:
+                            mcc_fig = create_mcc_comparison_chart(mcc_data)
+                            if mcc_fig:
+                                save_plot_to_image(mcc_fig, mcc_img_path)
+                                plt.close(mcc_fig)
+                                has_mcc_image = True
+                            else:
+                                has_mcc_image = False
+                        except Exception as e:
+                            print(f"Error al generar gráfico MCC: {e}")
+                            has_mcc_image = False
+                    
+                    # Si tenemos una imagen válida, mostrarla
+                    if has_mcc_image and os.path.exists(mcc_img_path):
+                        # Añadir nueva página para el gráfico MCC
+                        pdf.add_page()
+                        pdf.set_font("Arial", 'B', 11)
+                        mcc_title = t.get('mcc_comparison_chart', "COMPARACIÓN DE COEFICIENTE DE MATTHEWS (MCC)")
+                        pdf.cell(0, 8, txt=clean_text_for_pdf(mcc_title), ln=1, align='C')
+                        # Centrar la imagen en la página
+                        pdf.image(mcc_img_path, x=(pdf.w - 220)/2, w=220, h=150)
+                        
+                        # Añadir explicación del coeficiente MCC
+                        pdf.ln(5)
+                        pdf.set_font("Arial", size=9)
+                        mcc_explanation = t.get('mcc_chart_explanation', 
+                            "El Coeficiente de Matthews (MCC) es una medida de la calidad de las clasificaciones binarias que tiene en cuenta los verdaderos y falsos positivos y negativos. Valores más altos (cercanos a 1) indican mejor rendimiento del modelo.")
+                        pdf.multi_cell(0, 8, txt=clean_text_for_pdf(mcc_explanation), align='L')
             
             # Generar gráfico McNemar si está disponible en los plots_data
-            if plots_data and 'mcnemar_results' in plots_data and len(plots_data['mcnemar_results']) > 0:
-                mcnemar_fig = create_mcnemar_plot(plots_data['mcnemar_results'])
-                mcnemar_img_path = "temp_mcnemar_plot.png"
+            mcnemar_data = None
+            # Buscar datos McNemar directamente en plots_data o dentro de comparison_plots
+            if plots_data:
+                if 'mcnemar_results' in plots_data:
+                    mcnemar_data = plots_data['mcnemar_results']
+                elif 'comparison_plots' in plots_data:
+                    # Buscar la clave que contiene "McNemar" en comparison_plots
+                    for key, value in plots_data['comparison_plots'].items():
+                        if 'McNemar' in key or 'mcnemar' in key.lower():
+                            mcnemar_data = value
+                            break
                 
-                if mcnemar_fig:
-                    save_plot_to_image(mcnemar_fig, mcnemar_img_path)
-                    plt.close(mcnemar_fig)
+                # Verificar que los datos sean adecuados para generar el gráfico
+                if mcnemar_data is not None:
+                    mcnemar_img_path = "temp_mcnemar_plot.png"
                     
-                    # Añadir nueva página para el gráfico McNemar
-                    pdf.add_page()
-                    pdf.set_font("Arial", 'B', 11)
-                    pdf.cell(0, 8, txt=clean_text_for_pdf(t.get('mcnemar_test_chart', "PRUEBA ESTADÍSTICA DE MCNEMAR")), ln=1, align='C')
-                    pdf.image(mcnemar_img_path, x=30, w=220, h=150)
+                    # Si ya es una imagen, usarla directamente
+                    if isinstance(mcnemar_data, str) and os.path.exists(mcnemar_data):
+                        mcnemar_img_path = mcnemar_data
+                        has_mcnemar_image = True
+                    else:
+                        # Intentar generar el gráfico
+                        try:
+                            mcnemar_fig = create_mcnemar_plot(mcnemar_data)
+                            if mcnemar_fig:
+                                save_plot_to_image(mcnemar_fig, mcnemar_img_path)
+                                plt.close(mcnemar_fig)
+                                has_mcnemar_image = True
+                            else:
+                                has_mcnemar_image = False
+                        except Exception as e:
+                            print(f"Error al generar gráfico McNemar: {e}")
+                            has_mcnemar_image = False
                     
-                    # Añadir explicación de la prueba de McNemar
-                    pdf.ln(5)
-                    pdf.set_font("Arial", size=9)
-                    mcnemar_explanation = t.get('mcnemar_explanation', 
-                        "La prueba de McNemar evalúa la diferencia estadísticamente significativa entre modelos. Un p-valor < 0.05 indica que las diferencias entre modelos no son aleatorias.")
-                    pdf.multi_cell(0, 8, txt=clean_text_for_pdf(mcnemar_explanation), align='L')
+                    # Si tenemos una imagen válida, mostrarla
+                    if has_mcnemar_image and os.path.exists(mcnemar_img_path):
+                        # Añadir nueva página para el gráfico McNemar
+                        pdf.add_page()
+                        pdf.set_font("Arial", 'B', 11)
+                        mcnemar_title = t.get('mcnemar_test_chart', "PRUEBA ESTADÍSTICA DE MCNEMAR")
+                        pdf.cell(0, 8, txt=clean_text_for_pdf(mcnemar_title), ln=1, align='C')
+                        # Centrar la imagen en la página
+                        pdf.image(mcnemar_img_path, x=(pdf.w - 220)/2, w=220, h=150)
+                        
+                        # Añadir explicación de la prueba de McNemar
+                        pdf.ln(5)
+                        pdf.set_font("Arial", size=9)
+                        mcnemar_explanation = t.get('mcnemar_explanation', 
+                            "La prueba de McNemar evalúa la diferencia estadísticamente significativa entre modelos. Un p-valor < 0.05 indica que las diferencias entre modelos no son aleatorias.")
+                        pdf.multi_cell(0, 8, txt=clean_text_for_pdf(mcnemar_explanation), align='L')
             
             pdf.ln(5)
         

@@ -35,13 +35,70 @@ def setup_sidebar(models, t, available_languages):
     # Configuración principal
     st.sidebar.header(t['settings'])
     st.sidebar.markdown(t['settings_description'])
-
+    
+    # Sección para modelos híbridos
+    st.sidebar.markdown("---")
+    st.sidebar.subheader(t.get('hybrid_models', "🧠 Modelos Híbridos Avanzados"))
+    
+    # Verificar si hay modelos híbridos existentes
+    from hybrid_model_trainer import check_hybrid_models_exist
+    hybrid_models_exist, hybrid_model_names = check_hybrid_models_exist()
+    
+    if hybrid_models_exist:
+        models_list = ', '.join([name.replace('_', ' ').title() for name in hybrid_model_names])
+        st.sidebar.success(f"{t.get('hybrid_models_available', '✅ Modelos híbridos disponibles:')} {models_list}")
+    else:
+        st.sidebar.warning(t.get('no_hybrid_models', "⚠️ No se detectaron modelos híbridos"))
+    
+    # Botón para entrenar modelos híbridos
+    if st.sidebar.button(t.get('train_hybrid_models', "🚀 Entrenar Modelos Híbridos"), 
+                       help=t.get('train_hybrid_help', "Inicia el entrenamiento de modelos híbridos avanzados. Este proceso puede tomar varias horas.")):
+        st.session_state['start_hybrid_training'] = True
+    else:
+        # Inicializar variable de estado si no existe
+        if 'start_hybrid_training' not in st.session_state:
+            st.session_state['start_hybrid_training'] = False
+    
+    # Mostrar progreso si está entrenando
+    if 'training_in_progress' in st.session_state and st.session_state['training_in_progress']:
+        from hybrid_model_trainer import get_training_progress
+        progress_info = get_training_progress()
+        
+        if progress_info:
+            if progress_info.get('status') == 'completed':
+                st.sidebar.success(t.get('training_completed', "✅ Entrenamiento completado!"))
+                st.session_state['training_in_progress'] = False
+                st.session_state['need_reload'] = True
+            elif progress_info.get('status') == 'error':
+                error_msg = f"{t.get('training_error', '❌ Error:')} {progress_info.get('message')}"
+                st.sidebar.error(error_msg)
+                st.session_state['training_in_progress'] = False
+            else:
+                # Mostrar barra de progreso
+                st.sidebar.progress(int(progress_info.get('progress', 0)))
+                st.sidebar.info(progress_info.get('message', t.get('training_in_progress', 'Entrenando...')))
+                
+                # Mostrar información del modelo actual
+                if 'current_model' in progress_info and progress_info['current_model']:
+                    st.sidebar.text(f"Modelo: {progress_info['current_model']}")
+                    
+                # Mostrar información de epoch
+                if 'current_epoch' in progress_info and 'total_epochs' in progress_info:
+                    st.sidebar.text(f"Epoch: {progress_info['current_epoch']}/{progress_info['total_epochs']}")
+    
+    # Si se necesita recargar la página
+    if 'need_reload' in st.session_state and st.session_state['need_reload']:
+        st.sidebar.info(t.get('reloading', "🔄 Recargando para detectar nuevos modelos..."))
+        st.experimental_rerun()
+    
     # Opción de debug
     debug_mode = st.sidebar.checkbox(
         t['debug_mode'],
         value=False,
         help=t['debug_help']
     )
+    
+    st.sidebar.markdown("---")
 
     # Selección de modelo
     model_names = list(models.keys())

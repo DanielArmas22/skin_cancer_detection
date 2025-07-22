@@ -129,6 +129,10 @@ skin_cancer_detection/
 │   ├── model_utils.py       # Utilidades para gestión de modelos
 │   └── preprocessing.py     # Funciones de preprocesamiento de imágenes
 ├── data/                    # Conjunto de datos (no incluido en GitHub)
+├── plots/                   # Gráficos de rendimiento de modelos híbridos
+├── reports/                 # Métricas y reportes de evaluación
+├── entrenamiento-ia.ipynb   # Notebook para entrenamiento básico
+├── entrenamiento-modelos-hibridos.py # Script para entrenar modelos híbridos avanzados
 ├── docker-compose.yml       # Configuración de Docker Compose
 ├── Dockerfile               # Definición de la imagen Docker
 └── requirements.txt         # Dependencias del proyecto
@@ -178,6 +182,45 @@ data/
 1. Entrene su modelo y guárdelo en formato `.h5`
 2. Coloque el archivo en la carpeta `app/models/`
 3. El sistema detectará automáticamente el nuevo modelo
+
+### Entrenamiento de modelos híbridos
+
+El proyecto incluye un script adicional para entrenar modelos híbridos avanzados que combinan EfficientNetB4 con otros modelos:
+
+1. **Preparación**: Asegúrese de tener las imágenes organizadas en la estructura correcta (use `entrenamiento-ia.ipynb` primero si es necesario):
+
+   ```
+   data/
+   ├── ISIC_dataset/        # Datos de entrenamiento
+   │   ├── benign/
+   │   └── malignant/
+   └── ISIC_dataset_test/   # Datos de validación
+       ├── benign/
+       └── malignant/
+   ```
+
+2. **Ejecución del entrenamiento híbrido**:
+
+   ```bash
+   python entrenamiento-modelos-hibridos.py
+   ```
+
+3. **Modelos generados**:
+
+   - `EfficientNet_ResNet_Hybrid`: Combina EfficientNetB4 y ResNet152
+   - `EfficientNet_CNN_Hybrid`: Combina EfficientNetB4 con una CNN personalizada con mecanismo de atención
+
+4. **Resultados**:
+
+   - Los modelos entrenados se guardan en la carpeta `models/`
+   - Los reportes de métricas se almacenan en `reports/`
+   - Los gráficos de rendimiento se generan en `plots/`
+
+5. **Características del entrenamiento**:
+   - Preprocesamiento avanzado con CLAHE obligatorio
+   - Segmentación automática de regiones de interés (ROI)
+   - Mecanismos de atención para mejor enfoque en características relevantes
+   - Balanceo de clases automático
 
 ### Agregar nuevos idiomas
 

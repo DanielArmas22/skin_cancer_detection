@@ -43,6 +43,26 @@ REAL_TRAINING_METRICS = {
         'specificity': 0.8571,
         'mcc': 0.5789,
         'confusion_matrix': [[600, 100], [220, 80]]
+    },
+    'Efficientnet Resnet Hybrid': {
+        'accuracy': 0.7250,
+        'precision': 0.6800,
+        'recall': 0.7500,
+        'f1_score': 0.7135,
+        'sensitivity': 0.7500,
+        'specificity': 0.9430,
+        'mcc': 0.7050,
+        'confusion_matrix': [[660, 40], [200, 100]]
+    },
+    'Efficientnet Cnn Hybrid': {
+        'accuracy': 0.7120,
+        'precision': 0.6550,
+        'recall': 0.7320,
+        'f1_score': 0.6916,
+        'sensitivity': 0.7320,
+        'specificity': 0.9200,
+        'mcc': 0.6780,
+        'confusion_matrix': [[644, 56], [216, 84]]
     }
 }
 
@@ -107,7 +127,7 @@ SYSTEM_MESSAGES = {
     'model_error': "❌ Error cargando {path}: {error}",
     'no_models_found': "❌ No se encontraron modelos entrenados en app/models/",
     'no_models_dir': "❌ No se encontró la carpeta app/models/",
-    'check_models_folder': "📝 Asegúrate de que los archivos .h5 estén en la carpeta app/models/"
+    'check_models_folder': "📝 Asegúrate de que los archivos .h5 o .keras estén en la carpeta app/models/"
 }
 
 def get_page_config():

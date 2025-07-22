@@ -12,7 +12,8 @@ def load_models():
     # Cargar modelos entrenados desde app/models
     models_dir = Path("app/models")
     if models_dir.exists():
-        trained_models = list(models_dir.glob("*.h5"))
+        # Buscar modelos con extensiones .h5 y .keras
+        trained_models = list(models_dir.glob("*.h5")) + list(models_dir.glob("*.keras"))
         if trained_models:
             print("📁 Cargando modelos entrenados para cáncer de piel...")
             for model_path in trained_models:
@@ -25,7 +26,7 @@ def load_models():
                     print(f"❌ Error cargando {model_path}: {e}")
         else:
             print("❌ No se encontraron modelos entrenados en app/models/")
-            print("📝 Asegúrate de que los archivos .h5 estén en la carpeta app/models/")
+            print("📝 Asegúrate de que los archivos .h5 o .keras estén en la carpeta app/models/")
     else:
         print("❌ No se encontró la carpeta app/models/")
         print("📝 Asegúrate de que los modelos entrenados estén en la ubicación correcta")

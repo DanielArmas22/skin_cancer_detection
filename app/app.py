@@ -14,6 +14,8 @@ from PIL import Image
 from config import initialize_page, MCC_COMPARISON_DATA, PAGE_CONFIG, REAL_TRAINING_METRICS
 from model_utils import load_models, predict_image, predict_image_with_debug, predict_image_with_custom_threshold, get_model_info
 from preprocessing import preprocess_image
+from hybrid_model_trainer import train_hybrid_models_async, get_training_progress, check_hybrid_models_exist
+from hybrid_data_integrator import update_model_metrics
 from ui_components import (
     setup_sidebar, display_main_header, display_image_upload_section, display_image_comparison,
     display_diagnosis_results, display_debug_info, display_interpretation, display_model_comparison_table,
@@ -51,15 +53,48 @@ def main():
             models = load_models()
             if not models:
                 st.error("❌ " + t.get('models_load_error', "No se pudieron cargar los modelos entrenados."))
-                st.error("📝 " + t.get('models_folder_check', "Asegúrate de que los archivos .h5 estén en la carpeta app/models/"))
+                st.error("📝 " + t.get('models_folder_check', "Asegúrate de que los archivos .h5 o .keras estén en la carpeta app/models/"))
                 return {}
             return models
         except Exception as e:
             st.error(f"❌ {t.get('model_load_exception', 'Error al cargar los modelos')}: {str(e)}")
             return {}
 
+    # Verificar y actualizar métricas de modelos híbridos si existen
+    hybrid_models_exist, hybrid_model_names = check_hybrid_models_exist()
+    if hybrid_models_exist:
+        # Actualizar métricas y datos MCC si existen modelos híbridos
+        global REAL_TRAINING_METRICS, MCC_COMPARISON_DATA
+        updated_metrics, updated_mcc = update_model_metrics()
+        
+        # Solo actualizar si se encontraron métricas
+        if len(updated_metrics) > len(REAL_TRAINING_METRICS):
+            REAL_TRAINING_METRICS = updated_metrics
+        if len(updated_mcc) > len(MCC_COMPARISON_DATA):
+            MCC_COMPARISON_DATA = updated_mcc
+
+    # Cargar modelos
     models = load_models_cached()
     model_names = list(models.keys())
+
+    # Manejar el entrenamiento de modelos híbridos
+    if 'start_hybrid_training' in st.session_state and st.session_state['start_hybrid_training']:
+        # Resetear la bandera
+        st.session_state['start_hybrid_training'] = False
+        
+        # Iniciar entrenamiento si no está en progreso
+        if 'training_in_progress' not in st.session_state or not st.session_state['training_in_progress']:
+            st.session_state['training_in_progress'] = True
+            
+            # Función de callback para actualizar el progreso
+            def update_progress(message, progress, error=False):
+                # Esta función se ejecutará desde otro hilo, los cambios
+                # en st.session_state serán visibles en la próxima rerenderización
+                pass
+            
+            # Iniciar entrenamiento en segundo plano
+            train_hybrid_models_async(progress_callback=update_progress)
+            st.experimental_rerun()
 
     if not model_names:
         st.error("❌ " + t.get('no_models_available', "No hay modelos disponibles. Verifica que los modelos entrenados estén en app/models/"))

@@ -24,6 +24,15 @@ translations = {
     'model_info': '📊 **Información del Modelo:**',
     'parameters': '**Parámetros:**',
     'layers': '**Capas:**',
+    'hybrid_models': '🧠 Modelos Híbridos Avanzados',
+    'hybrid_models_available': '✅ Modelos híbridos disponibles:',
+    'no_hybrid_models': '⚠️ No se detectaron modelos híbridos',
+    'train_hybrid_models': '🚀 Entrenar Modelos Híbridos',
+    'train_hybrid_help': 'Inicia el entrenamiento de modelos híbridos avanzados. Este proceso puede tomar varias horas.',
+    'training_in_progress': 'Entrenando...',
+    'training_completed': '✅ Entrenamiento completado!',
+    'training_error': '❌ Error:',
+    'reloading': '🔄 Recargando para detectar nuevos modelos...',
     'confidence_threshold': '🎯 Umbral de confianza para diagnóstico',
     'confidence_help': 'Valores más altos requieren mayor confianza para el diagnóstico',
     'decision_threshold': '⚖️ Umbral de decisión Maligno/Benigno',
@@ -66,7 +75,7 @@ translations = {
     
     # Errores y mensajes
     'models_load_error': 'No se pudieron cargar los modelos entrenados.',
-    'models_folder_check': 'Asegúrate de que los archivos .h5 estén en la carpeta app/models/',
+    'models_folder_check': 'Asegúrate de que los archivos .h5 o .keras estén en la carpeta app/models/',
     'model_load_exception': 'Error al cargar los modelos',
     'no_models_available': 'No hay modelos disponibles. Verifica que los modelos entrenados estén en app/models/',
     

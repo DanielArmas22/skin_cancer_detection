@@ -102,6 +102,15 @@ def create_metrics_dashboard(metrics_data, model_name):
         
         # Gráfico 4: Resumen de métricas en texto
         ax4.axis('off')
+        
+        # Extraer valores de la matriz de confusión
+        # La matriz sigue el formato [[TN, FP], [FN, TP]]
+        cm = metrics_data['confusion_matrix']
+        tp = cm[1][1]
+        tn = cm[0][0]
+        fp = cm[0][1]
+        fn = cm[1][0]
+        
         metrics_text = f"""
         == RESUMEN DE METRICAS ==
         
@@ -113,8 +122,8 @@ def create_metrics_dashboard(metrics_data, model_name):
         MCC: {metrics_data['mcc']:.3f}
         
         >> ELEMENTOS MATRIZ:
-        TP: {metrics_data['tp']} | TN: {metrics_data['tn']}
-        FP: {metrics_data['fp']} | FN: {metrics_data['fn']}
+        TP: {tp} | TN: {tn}
+        FP: {fp} | FN: {fn}
         """
         ax4.text(0.1, 0.9, metrics_text, transform=ax4.transAxes, fontsize=10,
                 verticalalignment='top', bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.8))

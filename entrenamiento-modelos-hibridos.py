@@ -107,9 +107,13 @@ def segment_roi(image):
     
     roi = result[y:y+h, x:x+w]
     
-    # Si el ROI es muy pequeño, usar la imagen original
+    # Si el ROI es muy pequeño o tiene dimensiones incorrectas, usar la imagen original
     if roi.size < image.size * 0.1:
         return image
+        
+    # Asegurar que la ROI tenga el mismo tamaño que la imagen original
+    roi_resized = cv2.resize(roi, (image.shape[1], image.shape[0]))
+    return roi_resized
     
     return roi
 
@@ -172,11 +176,21 @@ class CustomDataGenerator(tf.keras.utils.Sequence):
                     beta = random.uniform(-10, 10)    # Brillo
                     img_cv = cv2.convertScaleAbs(img_cv, alpha=alpha, beta=beta)
             
+            # Verificar si la imagen tiene las dimensiones correctas después del procesamiento
+            target_shape = (IMG_SIZE, IMG_SIZE, 3)  # Tamaño esperado
+            if img_cv.shape != target_shape:
+                # Redimensionar para garantizar el tamaño correcto
+                img_cv = cv2.resize(img_cv, (IMG_SIZE, IMG_SIZE))
+            
             # Normalizar a [0-1]
             img_cv = img_cv.astype(np.float32) / 255.0
             processed_batch[i] = img_cv
             
         return processed_batch, y_batch
+        
+    def reset(self):
+        """Reset del generador base"""
+        self.generator.reset()
 
 # Funciones para crear los modelos híbridos
 def create_hybrid_efficientnet_resnet(input_shape=(IMG_SIZE, IMG_SIZE, 3)):
@@ -229,7 +243,7 @@ def create_hybrid_efficientnet_resnet(input_shape=(IMG_SIZE, IMG_SIZE, 3)):
     model.compile(
         optimizer=Adam(learning_rate=1e-4),
         loss='binary_crossentropy',
-        metrics=['accuracy', 'Precision', 'Recall', 'AUC']
+        metrics=['accuracy', tf.keras.metrics.AUC(), tf.keras.metrics.Precision(), tf.keras.metrics.Recall()]
     )
     
     return model
@@ -288,7 +302,7 @@ def create_hybrid_efficientnet_cnn(input_shape=(IMG_SIZE, IMG_SIZE, 3)):
     model.compile(
         optimizer=Adam(learning_rate=1e-4),
         loss='binary_crossentropy',
-        metrics=['accuracy', 'Precision', 'Recall', 'AUC']
+        metrics=['accuracy', tf.keras.metrics.AUC(), tf.keras.metrics.Precision(), tf.keras.metrics.Recall()]
     )
     
     return model
@@ -302,7 +316,7 @@ def train_and_evaluate_model(model, train_gen, val_gen, class_weights, model_nam
     print(f"{'='*60}")
     
     # Callbacks
-    checkpoint_path = f"{MODELS_DIR}/{model_name.lower().replace(' ', '_')}.h5"
+    checkpoint_path = f"{MODELS_DIR}/{model_name.lower().replace(' ', '_')}.keras"
     log_path = f"{REPORTS_DIR}/{model_name.lower().replace(' ', '_')}_log.csv"
     
     callbacks = [
@@ -329,11 +343,38 @@ def train_and_evaluate_model(model, train_gen, val_gen, class_weights, model_nam
         CSVLogger(log_path)
     ]
     
+    # Convertir el generador personalizado a un tf.data.Dataset
+    def gen_train():
+        for i in range(len(train_gen)):
+            x, y = train_gen[i]
+            yield x, y
+            
+    def gen_val():
+        for i in range(len(val_gen)):
+            x, y = val_gen[i]
+            yield x, y
+    
+    # Crear tf.data.Dataset a partir de los generadores personalizados
+    output_signature = (
+        tf.TensorSpec(shape=(train_gen.batch_size, IMG_SIZE, IMG_SIZE, 3), dtype=tf.float32),
+        tf.TensorSpec(shape=(train_gen.batch_size,), dtype=tf.float32)
+    )
+    
+    train_dataset = tf.data.Dataset.from_generator(
+        gen_train,
+        output_signature=output_signature
+    )
+    
+    val_dataset = tf.data.Dataset.from_generator(
+        gen_val,
+        output_signature=output_signature
+    )
+    
     # Entrenamiento
     history = model.fit(
-        train_gen,
+        train_dataset,
         steps_per_epoch=train_gen.samples // train_gen.batch_size,
-        validation_data=val_gen,
+        validation_data=val_dataset,
         validation_steps=val_gen.samples // val_gen.batch_size,
         epochs=epochs,
         callbacks=callbacks,
@@ -344,9 +385,20 @@ def train_and_evaluate_model(model, train_gen, val_gen, class_weights, model_nam
     # Cargar mejor modelo guardado
     model = load_model(checkpoint_path)
     
-    # Evaluación
+    # Evaluación básica
     val_results = model.evaluate(val_gen, verbose=1)
     metrics_dict = {name: float(value) for name, value in zip(model.metrics_names, val_results)}
+    
+    # Generar matriz de confusión y métricas avanzadas
+    additional_metrics = generate_evaluation_metrics(model, val_gen, model_name)
+    
+    # Combinar métricas básicas con métricas avanzadas
+    metrics_dict.update({
+        'precision': additional_metrics['precision'],
+        'recall': additional_metrics['recall'],
+        'f1_score': additional_metrics['f1_score'],
+        'auc': additional_metrics['auc']
+    })
     
     print(f"\n✅ Resultados finales de {model_name}:")
     for metric_name, metric_value in metrics_dict.items():
@@ -354,9 +406,6 @@ def train_and_evaluate_model(model, train_gen, val_gen, class_weights, model_nam
     
     # Generar gráficos de entrenamiento
     plot_training_history(history, model_name)
-    
-    # Generar matriz de confusión y métricas
-    generate_evaluation_metrics(model, val_gen, model_name)
     
     # Guardar resultados en JSON
     save_model_results(model_name, metrics_dict, history.history)
@@ -399,33 +448,6 @@ def plot_training_history(history, model_name):
     plt.tight_layout()
     plt.savefig(f"{PLOTS_DIR}/{model_name.lower().replace(' ', '_')}_training.png")
     plt.close()
-    
-    # Gráfica de métricas adicionales
-    plt.figure(figsize=(12, 5))
-    
-    # Gráfica de precisión
-    plt.subplot(1, 2, 1)
-    plt.plot(history.history['Precision'], label='Train Precision')
-    plt.plot(history.history['val_Precision'], label='Validation Precision')
-    plt.title(f'{model_name}: Precisión durante entrenamiento')
-    plt.xlabel('Epoch')
-    plt.ylabel('Precision')
-    plt.legend()
-    plt.grid(True, linestyle='--', alpha=0.6)
-    
-    # Gráfica de recall
-    plt.subplot(1, 2, 2)
-    plt.plot(history.history['Recall'], label='Train Recall')
-    plt.plot(history.history['val_Recall'], label='Validation Recall')
-    plt.title(f'{model_name}: Recall durante entrenamiento')
-    plt.xlabel('Epoch')
-    plt.ylabel('Recall')
-    plt.legend()
-    plt.grid(True, linestyle='--', alpha=0.6)
-    
-    plt.tight_layout()
-    plt.savefig(f"{PLOTS_DIR}/{model_name.lower().replace(' ', '_')}_metrics.png")
-    plt.close()
 
 def generate_evaluation_metrics(model, val_gen, model_name):
     """
@@ -435,9 +457,31 @@ def generate_evaluation_metrics(model, val_gen, model_name):
     val_gen.reset()
     y_true = val_gen.classes
     
+    # Crear conjunto de datos para predicción
+    def gen_predict():
+        for i in range(len(val_gen)):
+            x, _ = val_gen[i]
+            yield x
+    
+    predict_dataset = tf.data.Dataset.from_generator(
+        gen_predict,
+        output_signature=tf.TensorSpec(
+            shape=(val_gen.batch_size, IMG_SIZE, IMG_SIZE, 3), 
+            dtype=tf.float32
+        )
+    )
+    
     # Obtener probabilidades predichas
-    y_prob = model.predict(val_gen, steps=np.ceil(val_gen.samples/val_gen.batch_size))
+    y_prob = model.predict(predict_dataset, steps=np.ceil(val_gen.samples/val_gen.batch_size))
     y_pred = (y_prob > 0.5).astype(int).reshape(-1)
+    
+    # Calcular métricas manualmente
+    from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
+    
+    precision = precision_score(y_true, y_pred)
+    recall = recall_score(y_true, y_pred)
+    f1 = f1_score(y_true, y_pred)
+    accuracy = accuracy_score(y_true, y_pred)
     
     # Matriz de confusión
     cm = confusion_matrix(y_true, y_pred)
@@ -470,9 +514,18 @@ def generate_evaluation_metrics(model, val_gen, model_name):
     # Informe de clasificación
     report = classification_report(y_true, y_pred, target_names=['Benigno', 'Maligno'], output_dict=True)
     
+    # Añadir métricas calculadas manualmente al informe
+    report['precision'] = precision
+    report['recall'] = recall
+    report['f1_score'] = f1
+    report['accuracy'] = accuracy
+    report['auc'] = roc_auc
+    
     # Guardar resultados en JSON
     with open(f"{REPORTS_DIR}/{model_name.lower().replace(' ', '_')}_classification_report.json", 'w') as f:
         json.dump(report, f, indent=4)
+        
+    return report
 
 def save_model_results(model_name, metrics, history):
     """
