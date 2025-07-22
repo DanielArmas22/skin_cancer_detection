@@ -95,19 +95,7 @@ def get_model_metrics(selected_model):
         return metrics_data, False
 
 
-def generate_activation_map(model, image):
-    """
-    Función obsoleta: usar generate_gradcam() del módulo activation_maps en su lugar
-    
-    Args:
-        model: Modelo de TensorFlow/Keras
-        image (np.array): Imagen de entrada
-    
-    Returns:
-        np.array: Imagen con mapa de calor superpuesto o None si hay error
-    """
-    from activation_maps import generate_gradcam
-    return generate_gradcam(model, image)
+# Se ha eliminado la función generate_activation_map debido a errores con capas convolucionales
 
 
 def create_mcc_comparison_dataframe(mcc_data):

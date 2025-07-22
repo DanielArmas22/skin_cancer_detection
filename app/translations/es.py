@@ -6,6 +6,16 @@ translations = {
     'settings_description': 'Selecciona los parámetros para el análisis',
     'image_upload': '📸 Carga de Imagen',
     
+    # PDF específico
+    'pdf_report_title': 'Reporte Médico Inteligente',
+    'report_date_time': 'Fecha y hora del análisis',
+    'model_used': 'Modelo utilizado',
+    'threshold_value': 'Umbral de confianza',
+    'analyzed_image': 'IMAGEN ANALIZADA',
+    'diagnosis_results': 'RESULTADOS DEL DIAGNÓSTICO',
+    'raw_confidence_value': 'Valor raw del modelo',
+    'raw_value': 'Valor Raw',
+    
     # Opciones de configuración
     'debug_mode': '🐛 Modo Debug',
     'debug_help': 'Activa información detallada de debug para diagnosticar problemas',
@@ -37,7 +47,8 @@ translations = {
     'low_confidence_warning': '⚠️ **Confianza baja**: La confianza en el diagnóstico es menor al umbral establecido. Se recomienda consultar a un especialista.',
     'favorable_result': '✅ **Resultado favorable**: La lesión parece ser benigna según el análisis del modelo entrenado. Sin embargo, se recomienda seguimiento con un dermatólogo para confirmación.',
     'attention_required': '🚨 **Atención requerida**: El sistema ha detectado características que sugieren una lesión maligna. Se recomienda consultar **urgentemente** con un especialista.',
-    
+    'model_comparison_desc': 'Resultados de análisis de la misma imagen con diferentes modelos',
+
     # Elementos de métricas
     'accuracy': 'Accuracy',
     'sensitivity': 'Sensibilidad',
@@ -75,6 +86,18 @@ translations = {
     'favorable_result': '✅ **Resultado favorable**: La lesión parece ser benigna según el análisis. Se recomienda seguimiento médico.',
     'attention_required': '🚨 **Atención requerida**: Se detectaron características que sugieren una lesión maligna. Consulte urgentemente a un especialista.',
     
+    # Información técnica y avisos legales
+    'technical_info': 'INFORMACIÓN TÉCNICA',
+    'technical_dataset': 'Dataset: ISIC 2019 (25,331 imágenes reales)',
+    'technical_type': 'Tipo: Clasificación Binaria (Benigno/Maligno)',
+    'technical_accuracy': 'Precisión: ~69% (optimizado para cáncer de piel)',
+    'technical_input': 'Entrada: 300x300 píxeles',
+    'technical_architecture': 'Arquitectura: Transfer Learning con fine-tuning',
+    'medical_disclaimer_title': 'DESCARGO DE RESPONSABILIDAD MÉDICA',
+    'medical_disclaimer_1': 'Este sistema es para fines educativos y de investigación.',
+    'medical_disclaimer_2': 'Los resultados NO constituyen diagnóstico médico.',
+    'medical_disclaimer_3': 'SIEMPRE consulte con un dermatólogo para diagnóstico profesional.',
+    
     # Debug
     'debug_info': '**Información de Debug:**',
     'processed_image_title': 'Imagen procesada',
@@ -87,4 +110,138 @@ translations = {
     # PDF y reportes
     'download_pdf': 'Descargar Reporte PDF',
     'pdf_success': 'Reporte PDF generado exitosamente',
+    'pdf_section_title': 'Generar Reporte PDF',
+    'generate_pdf_button': 'Generar Reporte PDF Completo',
+    'pdf_includes': 'El reporte PDF incluye',
+    'pdf_content_diagnosis': 'Diagnóstico y análisis de la imagen',
+    'pdf_content_comparison': 'Comparación entre todos los modelos',
+    'pdf_content_matrix': 'Matriz de confusión y métricas avanzadas',
+    'pdf_content_charts': 'Gráficos de MCC y análisis estadístico',
+    'pdf_content_mcnemar': 'Pruebas de McNemar',
+    'pdf_content_recommendations': 'Recomendaciones médicas',
+    
+    # Etiquetas para gráficos y análisis estadístico
+    'confusion_matrix_title': 'Matriz de Confusión',
+    'metrics_dashboard_title': 'Dashboard de Métricas',
+    'statistical_analysis_title': 'Análisis Estadístico Avanzado',
+    'model_analysis_description': 'Análisis detallado del rendimiento del modelo seleccionado',
+    'statistical_analysis_description': 'Incluyendo Coeficiente de Matthews y Pruebas de McNemar',
+    'mcc_comparison_title': 'Resumen Comparativo de Coeficientes de Matthews (MCC)',
+    'mcc_comparison_description': 'Comparación de todos los modelos basada en el Coeficiente de Matthews',
+    'mcnemar_tests_title': 'Pruebas Estadísticas de McNemar',
+    'mcnemar_description': 'Comparación estadística entre modelos',
+    'activation_maps_title': 'Visualización de Mapas de Activación',
+    'activation_maps_description': 'Visualización de las regiones de la imagen que más influyeron en el diagnóstico',
+    'generating_activation_map': 'Generando mapa de activación...',
+    'activation_map_caption': 'Mapa de Activación (Grad-CAM)',
+    'heatmap_description': 'El mapa de calor muestra las regiones que más influyeron en el diagnóstico del modelo. Las áreas rojas y amarillas son las más relevantes.',
+    'activation_error': 'No se pudo generar el mapa de activación para este modelo.',
+    
+    # Interpretación de métricas
+    'metrics_interpretation': '📋 Interpretación:',
+    'accuracy_explanation': 'de las predicciones son correctas',
+    'sensitivity_explanation': 'de los casos malignos son detectados',
+    'specificity_explanation': 'de los casos benignos son correctamente identificados',
+    'precision_explanation': 'de los casos clasificados como malignos son realmente malignos',
+    'f1_explanation': 'es el balance entre precisión y sensibilidad',
+    'mcc_explanation': '(Coeficiente de Matthews - balanceado para clases desequilibradas)',
+    
+    # Tabla de métricas y otras etiquetas
+    'confusion_matrix_chart': '🎯 Matriz de Confusión',
+    'advanced_metrics': '📈 Métricas de Rendimiento Avanzadas',
+    'mcc_table_title': '📋 Tabla de Resumen - Coeficientes de Matthews',
+    'generating_pdf': 'Generando reporte PDF...',
+    'real_data_metrics': '✅ **Datos Reales de Entrenamiento**: Mostrando métricas reales del modelo {model} en el dataset ISIC 2019',
+    'simulated_data_metrics': '⚠️ **Datos Simulados**: Usando datos de ejemplo para demostración',
+    'mcnemar_test_results': 'Resultados de Pruebas de McNemar',
+    
+    # Etiquetas para gráficos PDF
+    'confidence_comparison_plot': 'Comparacion de Confianza',
+    'inference_speed_plot': 'Velocidad de Inferencia',
+    'mcc_comparative_plot': 'MCC Comparativo',
+    'mcnemar_pvalues_plot': 'McNemar P-valores',
+    
+    # Interpretación de McNemar
+    'interpretation': 'Interpretación',
+    'decision_criteria': 'Criterio de decisión',
+    'significant_difference': 'Diferencia significativa',
+    'no_significant_difference': 'Sin diferencia significativa',
+    'key_results': 'Resultados clave',
+    'statistical_superiority_shown': 'Muestra superioridad estadística',
+    'significant_diff_vs_models': 'Diferencias significativas vs otros modelos',
+    'robust_validation': 'Validación robusta de su excelencia',
+    'statistical_conclusions': 'Conclusiones Estadísticas',
+    'statistical_superiority': 'demuestra superioridad estadística significativa',
+    'superior_comparisons': '**Comparaciones donde {model} es superior:**',
+    'no_statistical_diff': 'No hay diferencias estadísticamente significativas entre los modelos',
+    'medical_interpretation': 'Interpretación médica',
+    'for_model': 'para',
+    'mcnemar_confirm': 'Los resultados de McNemar confirman que',
+    'stat_diff': 'Muestra diferencias estadísticamente significativas comparado con otros modelos',
+    'diagnostic_superiority': 'Demuestra superioridad en precisión diagnóstica',
+    'clinical_reliability': 'Proporciona mayor confiabilidad para decisiones clínicas',
+    'robust_option': 'Es la opción más robusta para implementación médica',
+    'justified_selection': 'Justifica su selección como modelo principal para el diagnóstico',
+    
+    # Datos de modelo MCC
+    'best_balance': 'Mejor balance general',
+    'recommended_clinical': 'Recomendado para uso clínico',
+    'superior_reliability': 'Superior confiabilidad diagnóstica',
+    'moderate_performance': 'Rendimiento moderado',
+    'viable_alternative': 'Alternativa viable',
+    'acceptable_balance': 'Balance aceptable',
+    'standard_performance': 'Rendimiento estándar',
+    'complementary_option': 'Opción complementaria',
+    'possible_improvements': 'Mejoras posibles',
+    
+    # Análisis de consistencia
+    'perfect_consistency': '✅ **Consistencia perfecta**: Todos los modelos coinciden en el diagnóstico:',
+    'inconsistency_detected': '⚠️ **Inconsistencia detectada**: Los modelos no coinciden en el diagnóstico',
+    'diagnoses_obtained': '**Diagnósticos obtenidos**:',
+    'recommendation_title': '💡 **Recomendación**:',
+    'inconsistency_recommendation': 'Cuando hay inconsistencias, se recomienda consultar con un especialista para confirmación.',
+    
+    # Interpretación de matriz de confusión
+    'confusion_matrix_interpretation': '🔍 Interpretación de la Matriz de Confusión',
+    'matrix_elements': '**📊 Elementos de la Matriz:**',
+    'true_positives': '**Verdaderos Positivos (TP)**: Casos malignos correctamente identificados',
+    'true_negatives': '**Verdaderos Negativos (TN)**: Casos benignos correctamente identificados',
+    'false_positives': '**Falsos Positivos (FP)**: Casos benignos clasificados como malignos',
+    'false_negatives': '**Falsos Negativos (FN)**: Casos malignos clasificados como benignos',
+    'medical_importance': '**🎯 Importancia Médica:**',
+    'fn_critical': '**Falsos Negativos** son críticos (no detectar cáncer)',
+    'fp_anxiety': '**Falsos Positivos** causan ansiedad innecesaria',
+    'recall_importance': '**Recall alto** es crucial para detección temprana',
+    'precision_importance': '**Precision alta** reduce falsas alarmas',
+    
+    # Interpretación MCC
+    'efficientnet_title': '**🥇 EfficientNetB4:**',
+    'efficientnet_metrics': '- MCC: 0.7845 (**Excelente**)\n- Mejor balance general\n- Recomendado para uso clínico\n- Superior confiabilidad diagnóstica',
+    'resnet_title': '**🥈 ResNet152:**',
+    'resnet_metrics': '- MCC: 0.6234 (**Bueno**)\n- Rendimiento moderado\n- Alternativa viable\n- Balance aceptable',
+    'custom_cnn_title': '**🥉 CNN Personalizada:**',
+    'custom_cnn_metrics': '- MCC: 0.5789 (**Bueno**)\n- Rendimiento estándar\n- Opción complementaria\n- Mejoras posibles',
+    
+    # Evaluación de modelos y estadísticas
+    'best_balance': 'Mejor balance general',
+    'recommended_clinical': 'Recomendado para uso clínico',
+    'superior_reliability': 'Superior confiabilidad diagnóstica',
+    'moderate_performance': 'Rendimiento moderado',
+    'viable_alternative': 'Alternativa viable',
+    'acceptable_balance': 'Balance aceptable',
+    'standard_performance': 'Rendimiento estándar',
+    'complementary_option': 'Opción complementaria',
+    'possible_improvements': 'Mejoras posibles',
+    'statistical_conclusions': 'Conclusiones Estadísticas',
+    'statistical_superiority': 'demuestra superioridad estadística significativa',
+    'superior_comparisons': '**Comparaciones donde {model} es superior:**',
+    'no_statistical_diff': 'No hay diferencias estadísticamente significativas entre los modelos',
+    'medical_interpretation': 'Interpretación médica',
+    'for_model': 'para',
+    'mcnemar_confirm': 'Los resultados de McNemar confirman que',
+    'stat_diff': 'Muestra diferencias estadísticamente significativas comparado con otros modelos',
+    'diagnostic_superiority': 'Demuestra superioridad en precisión diagnóstica',
+    'clinical_reliability': 'Proporciona mayor confiabilidad para decisiones clínicas',
+    'robust_option': 'Es la opción más robusta para implementación médica',
+    'justified_selection': 'Justifica su selección como modelo principal para el diagnóstico',
 }
