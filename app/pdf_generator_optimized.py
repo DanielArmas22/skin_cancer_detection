@@ -689,12 +689,19 @@ def generate_pdf_report(image, diagnosis, confidence_percent, raw_confidence, mo
                     else:
                         # Intentar generar el gráfico
                         try:
-                            mcc_fig = create_mcc_comparison_chart(mcc_data)
-                            if mcc_fig:
-                                save_plot_to_image(mcc_fig, mcc_img_path)
-                                plt.close(mcc_fig)
-                                has_mcc_image = True
+                            # Asegurarse de que estamos usando correctamente la función
+                            # y que el tipo de datos es compatible
+                            if isinstance(mcc_data, dict) or isinstance(mcc_data, list):
+                                mcc_fig = create_mcc_comparison_chart(mcc_data)
+                                if mcc_fig:
+                                    save_plot_to_image(mcc_fig, mcc_img_path)
+                                    plt.close(mcc_fig)
+                                    has_mcc_image = True
+                                else:
+                                    has_mcc_image = False
                             else:
+                                # Si los datos no son dict ni list, no intentar generar el gráfico
+                                print(f"Datos de MCC incompatibles: {type(mcc_data)}")
                                 has_mcc_image = False
                         except Exception as e:
                             print(f"Error al generar gráfico MCC: {e}")
@@ -741,12 +748,19 @@ def generate_pdf_report(image, diagnosis, confidence_percent, raw_confidence, mo
                     else:
                         # Intentar generar el gráfico
                         try:
-                            mcnemar_fig = create_mcnemar_plot(mcnemar_data)
-                            if mcnemar_fig:
-                                save_plot_to_image(mcnemar_fig, mcnemar_img_path)
-                                plt.close(mcnemar_fig)
-                                has_mcnemar_image = True
+                            # Asegurarse de que estamos usando correctamente la función
+                            # y que el tipo de datos es compatible
+                            if isinstance(mcnemar_data, dict) or isinstance(mcnemar_data, list) or hasattr(mcnemar_data, 'items'):
+                                mcnemar_fig = create_mcnemar_plot(mcnemar_data)
+                                if mcnemar_fig:
+                                    save_plot_to_image(mcnemar_fig, mcnemar_img_path)
+                                    plt.close(mcnemar_fig)
+                                    has_mcnemar_image = True
+                                else:
+                                    has_mcnemar_image = False
                             else:
+                                # Si los datos no son del tipo adecuado, no intentar generar el gráfico
+                                print(f"Datos de McNemar incompatibles: {type(mcnemar_data)}")
                                 has_mcnemar_image = False
                         except Exception as e:
                             print(f"Error al generar gráfico McNemar: {e}")

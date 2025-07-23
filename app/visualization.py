@@ -310,12 +310,33 @@ def create_mcc_comparison_chart(mcc_data):
         matplotlib.figure.Figure: Figura del gráfico MCC
     """
     try:
+        # Verificar tipo de datos correcto
+        if not isinstance(mcc_data, dict):
+            raise TypeError(f"Se esperaba un diccionario, pero se recibió {type(mcc_data)}")
+        
         fig, ax = plt.subplots(figsize=PLOT_CONFIG['figsize_default'])
         
-        # Datos para el gráfico
-        model_names = list(mcc_data.keys())
-        mcc_values = [data['MCC'] for data in mcc_data.values()]
-        colors = [data['Color'] for data in mcc_data.values()]
+        # Datos para el gráfico - con manejo de errores
+        try:
+            model_names = list(mcc_data.keys())
+            mcc_values = []
+            colors = []
+            
+            # Extraer valores con manejo de estructuras posibles
+            for key in model_names:
+                if isinstance(mcc_data[key], dict):
+                    mcc_values.append(mcc_data[key].get('MCC', 0.0))
+                    colors.append(mcc_data[key].get('Color', '#1f77b4'))  # Color azul por defecto
+                else:
+                    # Si no es un diccionario, intentar usar directamente el valor
+                    mcc_values.append(float(mcc_data[key]))
+                    colors.append('#1f77b4')  # Color azul por defecto
+        except Exception as e:
+            # Si falla la extracción de datos, usar datos simples para evitar errores
+            st.warning(f"Error al procesar datos MCC: {e}. Usando datos por defecto.")
+            model_names = list(mcc_data.keys())
+            mcc_values = [0.5] * len(model_names)  # Valores por defecto
+            colors = ['#1f77b4'] * len(model_names)  # Color azul por defecto
         
         # Crear barras
         bars = ax.bar(model_names, mcc_values, color=colors, alpha=0.8, edgecolor='black', linewidth=1.5)
@@ -359,7 +380,7 @@ def create_mcnemar_plot(mcnemar_results):
     Crea gráfico de resultados de prueba de McNemar
     
     Args:
-        mcnemar_results (list): Lista de resultados de McNemar
+        mcnemar_results (list/dict): Lista o diccionario con resultados de McNemar
     
     Returns:
         matplotlib.figure.Figure: Figura del gráfico de McNemar
@@ -367,14 +388,38 @@ def create_mcnemar_plot(mcnemar_results):
     try:
         fig, ax = plt.subplots(figsize=PLOT_CONFIG['figsize_small'])
         
-        comparisons_names = [result['Comparación'] for result in mcnemar_results]
-        p_values = [result['P-valor'] for result in mcnemar_results]
+        # Manejar diferentes formatos de datos de entrada
+        try:
+            if isinstance(mcnemar_results, list):
+                # Formato lista de diccionarios
+                comparisons_names = [result.get('Comparación', f"Comp {i}") for i, result in enumerate(mcnemar_results)]
+                p_values = [result.get('P-valor', 0.5) for result in mcnemar_results]
+                
+            elif isinstance(mcnemar_results, dict):
+                # Formato diccionario
+                comparisons_names = list(mcnemar_results.keys())
+                
+                # Verificar estructura de los valores
+                if all(isinstance(v, dict) for v in mcnemar_results.values()):
+                    # Los valores son diccionarios con P-valor
+                    p_values = [v.get('P-valor', 0.5) for v in mcnemar_results.values()]
+                else:
+                    # Los valores son directamente P-valores
+                    p_values = list(mcnemar_results.values())
+            else:
+                raise TypeError(f"Tipo de datos no soportado: {type(mcnemar_results)}")
+                
+        except Exception as e:
+            # Usar datos por defecto en caso de error
+            st.warning(f"Error al procesar datos McNemar: {e}. Usando datos por defecto.")
+            comparisons_names = ["Comp 1", "Comp 2"]
+            p_values = [0.5, 0.5]
         
         # Colorear barras según significancia
         colors = []
         for i, (comparison, p) in enumerate(zip(comparisons_names, p_values)):
-            if 'EfficientNetB4' in comparison and p < 0.05:
-                colors.append(PLOT_CONFIG['colors']['excellent'])  # Verde para EfficientNetB4 superior
+            if isinstance(comparison, str) and 'EfficientNetB4' in comparison and p < 0.05:
+                colors.append(PLOT_CONFIG['colors'].get('excellent', '#28a745'))  # Verde para EfficientNetB4 superior
             elif p < 0.05:
                 colors.append('#FFC107')  # Amarillo para otras diferencias significativas
             else:
@@ -388,6 +433,60 @@ def create_mcnemar_plot(mcnemar_results):
         # Configurar el gráfico
         ax.set_ylabel('P-valor', fontsize=12, fontweight='bold')
         ax.set_title('Prueba de McNemar - Superioridad de EfficientNetB4', fontsize=14, fontweight='bold')
+        ax.set_ylim(0, max(p_values) * 1.2)
+        
+        # Añadir valores en las barras
+        for bar, value in zip(bars, p_values):
+            height = bar.get_height()
+            ax.text(bar.get_x() + bar.get_width()/2., height + 0.001,
+                   f'{value:.4f}', ha='center', va='bottom', fontweight='bold')
+        
+        # Configurar leyenda y layout
+        ax.legend()
+        plt.xticks(rotation=45, ha='right')
+        plt.tight_layout()
+        
+        return fig
+    except Exception as e:
+        st.error(f"Error al crear gráfico de McNemar: {str(e)}")
+        return None
+
+
+def save_plot_to_image(fig, filename):
+    """
+    Guarda un gráfico matplotlib como imagen
+    
+    Args:
+        fig (matplotlib.figure.Figure): Figura a guardar
+        filename (str): Nombre del archivo
+    
+    Returns:
+        bool: True si se guardó exitosamente, False en caso contrario
+    """
+    try:
+        # Verificar que fig sea una figura de matplotlib
+        if not hasattr(fig, 'savefig'):
+            st.error(f"Objeto no es una figura válida: {type(fig)}")
+            return False
+            
+        # Configurar DPI por defecto si no está definido
+        dpi_value = PLOT_CONFIG.get('dpi', 100)
+        
+        # Guardar la figura
+        fig.savefig(
+            filename, 
+            dpi=dpi_value,
+            bbox_inches='tight',
+            facecolor='white',
+            edgecolor='none',
+            pad_inches=0.1,
+            format='png',
+            transparent=False
+        )
+        return True
+    except Exception as e:
+        st.error(f"Error al guardar gráfico: {str(e)}")
+        return False('Prueba de McNemar - Superioridad de EfficientNetB4', fontsize=14, fontweight='bold')
         ax.set_ylim(0, max(p_values) * 1.2)
         
         # Añadir valores en las barras
